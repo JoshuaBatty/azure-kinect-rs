@@ -2,5 +2,6 @@
 members = [
     "azure-kinect",
     "azure-kinect-sample-viewer",
-    "k4arecorder"
+    "k4arecorder",
+    "nannou-viewer"
 ]

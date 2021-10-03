@@ -63,19 +63,33 @@ pub fn live_cam() -> (Handle, Receivers) {
 
             loop {
                 if let Ok(capture) = camera.get_capture(0) {
-                    let image = capture.get_color_image();
-                    let width = image.get_width_pixels();
-                    let height = image.get_height_pixels();
-                    let len = image.get_size();
+                    let colour_image = capture.get_color_image();
+                    let width = colour_image.get_width_pixels();
+                    let height = colour_image.get_height_pixels();
+                    let len = colour_image.get_size();
                     //let pitch = width as usize * 4;
 
                     if width > 0 && height > 0 {
                         //println!("width = {} - height = {} - len = {} - pitch = {}", width, height, len, pitch);
-                        let slice = unsafe { std::slice::from_raw_parts(image.get_buffer(), len) };
+                        let slice = unsafe { std::slice::from_raw_parts(colour_image.get_buffer(), len) };
                         let colour_image_buf: ImageBuffer<Bgra<u8>, _> = ImageBuffer::from_raw(width as u32, height as u32, slice.to_vec())
                                 .expect("can't create Image Buffer from raw pixels");
                         color_tx.send(colour_image_buf).ok();                    
                     }
+
+                    // let depth_image = capture.get_depth_image();
+                    // let width = depth_image.get_width_pixels();
+                    // let height = depth_image.get_height_pixels();
+                    // let len = depth_image.get_size();
+                    // //let pitch = width as usize * 4;
+
+                    // if width > 0 && height > 0 {
+                    //     //println!("width = {} - height = {} - len = {} - pitch = {}", width, height, len, pitch);
+                    //     let slice = unsafe { std::slice::from_raw_parts(depth_image.get_buffer(), len) };
+                    //     let depth_image_buf: ImageBuffer<LumaA<u16>, _> = ImageBuffer::from_raw(width as u32, height as u32, slice.to_vec())
+                    //             .expect("can't create Image Buffer from raw pixels");
+                    //     depth_tx.send(depth_image_buf).ok();                    
+                    // }
                 }
 
                 //thread::sleep(time::Duration::from_millis(11));
