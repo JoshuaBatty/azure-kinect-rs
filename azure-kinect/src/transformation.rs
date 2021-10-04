@@ -1,19 +1,20 @@
 use super::*;
 use std::ptr;
+use std::sync::Arc;
 
 #[allow(dead_code)]
-pub struct Transformation<'a> {
-    factory: &'a Factory,
+pub struct Transformation {
+    api: Arc<Api>,
     handle: k4a_transformation_t,
     color_resolution: Dimension,
     depth_resolution: Dimension,
 }
 
-impl Transformation<'_> {
-    pub fn new<'a>(factory: &'a Factory, calibration: &'a Calibration) -> Transformation<'a> {
-        let handle = (factory.k4a_transformation_create)(&calibration.calibration);
+impl Transformation {
+    pub fn new<'a>(api: Arc<Api>, calibration: &'a Calibration) -> Transformation {
+        let handle = (api.k4a_transformation_create)(&calibration.calibration);
         Transformation {
-            factory: factory,
+            api: api,
             handle: handle,
             color_resolution: Dimension {
                 width: calibration
@@ -44,7 +45,7 @@ impl Transformation<'_> {
         transformed_depth_image: &mut Image,
     ) -> Result<(), Error> {
         Error::from((self
-            .factory
+            .api
             .k4a_transformation_depth_image_to_color_camera)(
             self.handle,
             depth_image.handle,
@@ -55,7 +56,7 @@ impl Transformation<'_> {
 
     pub fn depth_image_to_color_camera(&self, depth_image: &Image) -> Result<Image, Error> {
         let mut transformed_depth_image = Image::with_format(
-            self.factory,
+            self.api.clone(),
             k4a_image_format_t::K4A_IMAGE_FORMAT_DEPTH16,
             self.color_resolution.width,
             self.color_resolution.height,
@@ -75,7 +76,7 @@ impl Transformation<'_> {
         invalid_custom_value: u32,
     ) -> Result<(), Error> {
         Error::from((self
-            .factory
+            .api
             .k4a_transformation_depth_image_to_color_camera_custom)(
             self.handle,
             depth_image.handle,
@@ -102,7 +103,7 @@ impl Transformation<'_> {
         };
 
         let mut transformed_depth_image = Image::with_format(
-            self.factory,
+            self.api.clone(),
             k4a_image_format_t::K4A_IMAGE_FORMAT_DEPTH16,
             self.color_resolution.width,
             self.color_resolution.height,
@@ -110,7 +111,7 @@ impl Transformation<'_> {
         )?;
 
         let mut transformed_custom_image = Image::with_format(
-            self.factory,
+            self.api.clone(),
             custom_image.get_format(),
             self.color_resolution.width,
             self.color_resolution.height,
@@ -135,7 +136,7 @@ impl Transformation<'_> {
         transformed_color_image: &mut Image,
     ) -> Result<(), Error> {
         Error::from((self
-            .factory
+            .api
             .k4a_transformation_color_image_to_depth_camera)(
             self.handle,
             depth_image.handle,
@@ -151,7 +152,7 @@ impl Transformation<'_> {
         color_image: &Image,
     ) -> Result<Image, Error> {
         let mut transformed_color_image = Image::with_format(
-            self.factory,
+            self.api.clone(),
             k4a_image_format_t::K4A_IMAGE_FORMAT_COLOR_BGRA32,
             self.color_resolution.width,
             self.color_resolution.height,
@@ -173,7 +174,7 @@ impl Transformation<'_> {
         xyz_image: &mut Image,
     ) -> Result<(), Error> {
         Error::from(
-            (self.factory.k4a_transformation_depth_image_to_point_cloud)(
+            (self.api.k4a_transformation_depth_image_to_point_cloud)(
                 self.handle,
                 depth_image.handle,
                 camera,
@@ -189,7 +190,7 @@ impl Transformation<'_> {
         camera: k4a_calibration_type_t,
     ) -> Result<Image, Error> {
         let mut xyz_image = Image::with_format(
-            self.factory,
+            self.api.clone(),
             k4a_image_format_t::K4A_IMAGE_FORMAT_CUSTOM,
             self.color_resolution.width,
             self.color_resolution.height,
@@ -200,9 +201,9 @@ impl Transformation<'_> {
     }
 }
 
-impl Drop for Transformation<'_> {
+impl Drop for Transformation {
     fn drop(&mut self) {
-        (self.factory.k4a_transformation_destroy)(self.handle);
+        (self.api.k4a_transformation_destroy)(self.handle);
         self.handle = ptr::null_mut();
     }
 }
