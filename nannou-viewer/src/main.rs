@@ -1,6 +1,6 @@
 extern crate nannou;
 
-mod azure;
+mod kinect;
 
 use nannou::prelude::*;
 use nannou::image;
@@ -10,6 +10,7 @@ use std::ops::DerefMut;
 use std::slice;
 
 use azure_kinect::*;
+use kinect::Kinect;
 
 fn main() {
     nannou::app(model)
@@ -19,12 +20,10 @@ fn main() {
 }
 
 struct Model {
-    //kinect: azure::Kinect,
+    kinect: Kinect,
     bind_group: wgpu::BindGroup,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
-    azure_rx: azure::Receivers,
-    azure_thread: azure::Handle,
 }
 
 // The vertex type that we will use to represent a point on our triangle.
@@ -58,83 +57,12 @@ fn assets_path(app: &App) -> std::path::PathBuf {
 }
 
 fn model(app: &App) -> Model {
-    let (azure_thread, azure_receiver) =  azure::live_cam();
-
-    /*
-    let factory = Factory::new().expect("no factory");
-    let device = factory.device_open(0).expect("can't open device");
-    let camera_config = k4a_device_configuration_t {
-        depth_mode: k4a_depth_mode_t::K4A_DEPTH_MODE_NFOV_2X2BINNED,
-        color_format: k4a_image_format_t::K4A_IMAGE_FORMAT_COLOR_MJPG,
-        ..k4a_device_configuration_t::default()
-    };
-    let camera = device.start_cameras(&camera_config).expect("can't start camera");
-    let image_dimension = camera_config.depth_mode.get_dimension();
-
-    // let mut buffer: &mut [u8] = &mut[];
-    //let mut buffer: Vec<u8> = vec![0; 368640];
-    //let pitch = 1280;
-
-    if let Ok(capture) = camera.get_capture(1000) {
-        // let width = depth_image.get_width_pixels();
-        unsafe {
-            let mut depth_image = capture.get_depth_image();
-            let ptr = depth_image.get_mut_buffer();
-            let len = depth_image.get_size();
-            let width = depth_image.get_width_pixels();
-            let height = depth_image.get_height_pixels();
-
-            println!("k4a_image_get_width_pixels = {}", width);
-            println!("k4a_image_get_height_pixels = {}", height);
-            println!("k4a_image_get_stride_bytes = {}", depth_image.get_stride_bytes());
-            println!("k4a_image_get_size = {}", len);
-            println!("width * height pixels = {}", width * height);
-            println!("k4a_image_format_t = {:?}", depth_image.get_format());
-            
-            let depth_data = slice::from_raw_parts(ptr, (height * width) as usize * std::mem::size_of::<u16>());
-            //println!("depth_data = {:?}", depth_data);
-            let image = image::load_from_memory(&depth_data).unwrap();
-
-            //let img = Vec::from_raw_parts(ptr, len, len);
-            //let img = cpu_accessible_buffer_from_slices(Some(&depth_data[..]).into_iter());
-            //let converted: ImageBuffer<image::LumaA<u8>, _> = ImageBuffer::from_raw(width as u32, height as u32, depth_data).expect("can't create Image Buffer from raw pixels");
-            println!("end of unsafe block");
-
-
-
-            // match image::load_from_memory_with_format(&img, image::ImageFormat::Png) {
-            //     Ok(i) => {
-            //         println!("success");
-            //     },
-            //     Err(e) => {
-            //         println!("error {}",&e.to_string());
-            //     }
-            // }            
-
-            // encode it into a memory buffer
-            // let mut encoded_img = Vec::new();
-            // {
-            //     let encoder = image::jpeg::JpegEncoder::new_with_quality(&mut encoded_img, 100);
-            //     encoder
-            //         .write_image(&img, 1, 1, image::ColorType::La16)
-            //         .expect("Could not encode image");
-            // }
-            
-        }  
-        println!("back to safety");      
-    }
-    println!("back in app land");
-
-    //println!("buffer = {:?}", &buffer);
-    */
-
+    env_logger::init();
     ///////////////////////////////////
     // Load the image.
     let logo_path = assets_path(app).join("nannou.png");
     let image = image::open(logo_path).unwrap();
     //let image = image::load_from_memory(&buffer).unwrap();
-
-    let (img_w, img_h) = image.dimensions();
 
     let w_id = app
         .new_window()
@@ -142,13 +70,16 @@ fn model(app: &App) -> Model {
         .view(view)
         .build()
         .unwrap();
+
     let window = app.window(w_id).unwrap();
-    let device = window.swap_chain_device();
+    let device = window.device();
     let format = Frame::TEXTURE_FORMAT;
     let msaa_samples = window.msaa_samples();
 
-    let vs_mod = wgpu::shader_from_spirv_bytes(device, include_bytes!("shaders/vert.spv"));
-    let fs_mod = wgpu::shader_from_spirv_bytes(device, include_bytes!("shaders/frag.spv"));
+    let vs_desc = wgpu::include_wgsl!("shaders/vs.wgsl");
+    let fs_desc = wgpu::include_wgsl!("shaders/fs.wgsl");
+    let vs_mod = device.create_shader_module(&vs_desc);
+    let fs_mod = device.create_shader_module(&fs_desc);
 
     // Load the image as a texture.
     let texture = wgpu::Texture::from_image(&window, &image);
@@ -173,25 +104,30 @@ fn model(app: &App) -> Model {
     );
 
     let vertices_bytes = vertices_as_bytes(&VERTICES[..]);
-    let usage = wgpu::BufferUsage::VERTEX;
+    let usage = wgpu::BufferUsages::VERTEX;
     let vertex_buffer = device.create_buffer_init(&BufferInitDescriptor {
         label: None,
         contents: vertices_bytes,
         usage,
     });
 
+    let azure_api = Api::new().expect("Can't load kinect azure library");
+    let kinect = Kinect::new(azure_api.clone(), 0).expect("Can't open kinect azure device");
+    
+
     Model {
+        kinect,
         bind_group,
         vertex_buffer,
         render_pipeline,
-        azure_rx: azure_receiver,
-        azure_thread,
     }
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
-    
-    
+    let window = app.main_window();
+    let device = window.device();
+    let queue = window.queue();
+    model.kinect.update(&device, &queue);
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
@@ -206,37 +142,20 @@ fn view(app: &App, model: &Model, frame: Frame) {
     // let instance_range = 0..1;
     // render_pass.draw(vertex_range, instance_range);
 
-
-    if let Some(colour_image_buffer) = model.azure_rx.color.try_iter().last() {
-        let window = app.main_window();
-        let device = window.swap_chain_device();
-        let queue = window.swap_chain_queue();
-        let texture_usage = wgpu::TextureUsage::COPY_DST | wgpu::TextureUsage::SAMPLED;
-
-        let colour_texture = wgpu::Texture::load_from_image_buffer(
-            &device, 
-            &queue,
-            texture_usage,
-            &colour_image_buffer);
-        
-        // let flat_samples = colour_image_buffer.as_flat_samples();
-        // model.texture.upload_data(
-        //     app.main_window().swap_chain_device(),
-        //     &mut *frame.command_encoder(),
-        //     &flat_samples.as_slice(),
-        // );
-
-        let draw = app.draw();
+    let draw = app.draw();
+    if let Some(colour_texture) = &model.kinect.colour_texture {
         draw.texture(&colour_texture);
-
-        // Write to the window frame.
-        draw.to_frame(app, &frame).unwrap();
     }
+
+    // if let Some(depth_texture) = &model.kinect.depth_texture {
+    //     draw.texture(&depth_texture);
+    // }
+    // Write to the window frame.
+    draw.to_frame(app, &frame).unwrap();
 }
 
-fn exit(app: &App, model: Model) {
-    // TODO: Re-add when using live feed.
-    model.azure_thread.close();
+fn exit(_app: &App, _model: Model) {
+
 }
 
 
@@ -247,12 +166,12 @@ fn create_bind_group_layout(
 ) -> wgpu::BindGroupLayout {
     wgpu::BindGroupLayoutBuilder::new()
         .texture(
-            wgpu::ShaderStage::FRAGMENT,
+            wgpu::ShaderStages::FRAGMENT,
             false,
             wgpu::TextureViewDimension::D2,
             texture_sample_type,
         )
-        .sampler(wgpu::ShaderStage::FRAGMENT, sampler_filtering)
+        .sampler(wgpu::ShaderStages::FRAGMENT, sampler_filtering)
         .build(device)
 }
 
