@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "azure-kinect",
-    "azure-kinect-sample-viewer",
     "k4arecorder",
     "nannou-viewer"
 ]
