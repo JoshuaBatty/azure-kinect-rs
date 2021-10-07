@@ -16,7 +16,7 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
         depth_mode: k4a_depth_mode_t::K4A_DEPTH_MODE_NFOV_2X2BINNED,
         ..k4a_device_configuration_t::default()
     };
-    let camera = device.start_cameras(&camera_config)?;
+    device.start_cameras(&camera_config)?;
 
     #[cfg(feature = "depth-view")]
     let image_dimension = camera_config.depth_mode.get_dimension();
@@ -59,7 +59,7 @@ fn main2() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        if let Ok(capture) = camera.get_capture(1) {
+        if let Ok(capture) = device.get_capture(1) {
             texture.with_lock(None, |buffer: &mut [u8], pitch: usize| {
                 #[cfg(feature = "depth-view")]
                 {
