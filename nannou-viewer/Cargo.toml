@@ -12,3 +12,4 @@ nannou = { git = "https://github.com/mitchmindtree/nannou", branch = "wgpu-0.10"
 azure-kinect = { path = "../azure-kinect" }
 byteorder = "1.4.3"
 env_logger = "0.9.0"
+bytemuck = { version = "1.4", features = [ "derive" ] }

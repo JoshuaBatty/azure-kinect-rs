@@ -2,7 +2,7 @@
 struct Uniforms {
     resolution: vec2<f32>;
     min_max_range: vec2<f32>;
-    draw_colour: bool;
+    draw_colour: u32;
 };
 
 struct FragmentOutput {
@@ -32,7 +32,7 @@ fn main([[location(0)]] tex_coords: vec2<f32>) -> FragmentOutput {
     var v = map_range(f32(tex.x), uniforms.min_max_range.x, uniforms.min_max_range.y, 0.0, 1.0);
     // let hue = map_range(v, 0.0, 1.0, 0.6666667, 0.3);
 
-    if(uniforms.draw_colour) {
+    if(uniforms.draw_colour == u32(1)) {
         let col = hsb2rgb(vec3<f32>(v,1.0,1.0));
         return FragmentOutput(vec4<f32>(col, 1.0));
     } else {

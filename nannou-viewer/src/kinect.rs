@@ -43,7 +43,6 @@ impl Kinect {
         let d = camera_config.depth_mode.get_dimension();
         let depth_dimension = vec2(d.width as f32, d.height as f32);
 
-
         //------------------------------------------------------------------------------------//
         //------------------------------------------------------------------------------------//
         //------------------------------------------------------------------------------------//
@@ -61,7 +60,6 @@ impl Kinect {
             usage,
         });
 
-        
         let sample_type = wgpu::TextureSampleType::Uint;
         let bind_group_layout = create_bind_group_layout(wgpu_device, sample_type);
         let pipeline_layout = create_pipeline_layout(wgpu_device, &bind_group_layout);
@@ -106,15 +104,18 @@ impl Kinect {
     }
 
     fn draw_renderpass(&self, draw: &Draw, frame: &Frame, wgpu_device: &wgpu::Device, bind_group: &Option<wgpu::BindGroup>, x: f32, y: f32, w: f32, h: f32) {
+        let usage = wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING;
         if let Some(bind_group) = bind_group {
+            let dim = self.depth_dimension;
             let texture = wgpu::TextureBuilder::new()
                 .dimension(wgpu::TextureDimension::D2)
                 .format(Frame::TEXTURE_FORMAT)
                 .extent(wgpu::Extent3d {
-                    width: 1280,
-                    height: 720,
+                    width: dim.x as u32,
+                    height: dim.y as u32,
                     depth_or_array_layers: 1,
                 })
+                .usage(usage)
                 .build(&wgpu_device);
             let texture_view = texture.view().build();
         
@@ -134,8 +135,8 @@ impl Kinect {
     }
 
     pub fn update(&mut self, wgpu_device: &wgpu::Device, queue: &wgpu::Queue) {
-        let texture_usage = wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::RENDER_ATTACHMENT;
-
+        //let texture_usage = wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::RENDER_ATTACHMENT;
+        let texture_usage = wgpu::TextureUsages::TEXTURE_BINDING;
         if let Ok(capture) = self.device.get_capture(0) {
             let colour_image = capture.get_color_image();
             let _format = colour_image.get_format();
@@ -190,7 +191,7 @@ impl Kinect {
                     wgpu_device, 
                     &self.pipeline.bind_group_layout, 
                     &depth_texture_view, 
-                    &uniforms));
+                    uniforms));
 
                 //println!("depth_bind_group {:#?}", &self.depth_bind_group.as_ref().unwrap());
             } 
@@ -221,7 +222,7 @@ impl Kinect {
                     wgpu_device, 
                     &self.pipeline.bind_group_layout, 
                     &ir_texture_view, 
-                    &uniforms));
+                    uniforms));
 
                 //println!("ir_bind_group {:#?}", &self.ir_bind_group.as_ref().unwrap());
             }
@@ -230,7 +231,6 @@ impl Kinect {
 }
 
 // texture binding in shaders assume float 
-
 // we need a copy of these shaders for each texture type
 // let fs_desc = wgpu::include_wgsl!("shaders/fs.wgsl");
 
@@ -238,11 +238,8 @@ impl Kinect {
 // texture type.
 
 // Have a hashmap from texture type to shader module
-
 // Change this and follow the compile errors :):
-
 // fs_mod: wgpu::ShaderModule field to fs_mod: HashMap<wgpu::TextureSampleType, wgpu::ShaderModule>
-
 
 
 // The vertex type that we will use to represent a point on our triangle.
@@ -269,14 +266,19 @@ const VERTICES: [Vertex; 4] = [
 ];
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 struct Uniforms {
     resolution: [f32; 2],
     min_max_range: [f32; 2],
-    draw_colour: bool,
+    draw_colour: u32,
 }
 
 fn create_uniforms(resolution: Vec2, range: Vec2, draw_colour: bool) -> Uniforms {
+    let draw_colour = if draw_colour {
+        1 
+    } else {
+        0
+    };
     Uniforms {
         resolution: [resolution.x, resolution.y],
         min_max_range: [range.x, range.y],
@@ -288,11 +290,6 @@ fn create_uniforms(resolution: Vec2, range: Vec2, draw_colour: bool) -> Uniforms
 fn vertices_as_bytes(data: &[Vertex]) -> &[u8] {
     unsafe { wgpu::bytes::from_slice(data) }
 }
-
-fn uniforms_as_bytes(uniforms: &Uniforms) -> &[u8] {
-    unsafe { wgpu::bytes::from(uniforms) }
-}
-
 
 fn create_bind_group_layout(
     device: &wgpu::Device,
@@ -314,13 +311,12 @@ fn create_bind_group(
     device: &wgpu::Device,
     layout: &wgpu::BindGroupLayout,
     texture: &wgpu::TextureView,
-    uniforms: &Uniforms,
+    uniforms: Uniforms,
 ) -> wgpu::BindGroup {
-    let uniforms_bytes = uniforms_as_bytes(&uniforms);
     let usage = wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST;
     let uniform_buffer = device.create_buffer_init(&BufferInitDescriptor {
         label: Some("uniform-buffer"),
-        contents: uniforms_bytes,
+        contents: bytemuck::cast_slice(&[uniforms]),
         usage,
     });
 
