@@ -20,3 +20,5 @@ include = [
 
 [dependencies]
 
+[build-dependencies]
+bindgen = "0.59.1"
