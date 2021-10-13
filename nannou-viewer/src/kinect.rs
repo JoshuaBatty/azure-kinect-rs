@@ -49,7 +49,7 @@ impl Kinect {
         let vs_desc = wgpu::include_wgsl!("shaders/vs.wgsl");
         let vs_mod = wgpu_device.create_shader_module(&vs_desc);
 
-        let fs_desc = wgpu::include_wgsl!("shaders/depth_fs.wgsl");
+        let fs_desc = wgpu::include_wgsl!("shaders/colour_fs.wgsl");
         let fs_mod = wgpu_device.create_shader_module(&fs_desc);
 
         let vertices_bytes = vertices_as_bytes(&VERTICES[..]);
@@ -60,7 +60,8 @@ impl Kinect {
             usage,
         });
 
-        let sample_type = wgpu::TextureSampleType::Uint;
+        let sample_type = wgpu::TextureSampleType::Float{filterable: true};
+
         let bind_group_layout = create_bind_group_layout(wgpu_device, sample_type);
         let pipeline_layout = create_pipeline_layout(wgpu_device, &bind_group_layout);
         let render_pipeline = create_render_pipeline(
@@ -135,6 +136,11 @@ impl Kinect {
     }
 
     pub fn update(&mut self, wgpu_device: &wgpu::Device, queue: &wgpu::Queue) {
+        // Create the sampler for sampling from the source texture.
+        let sampler_desc = wgpu::SamplerBuilder::new().into_descriptor();
+        let sampler_filtering = wgpu::sampler_filtering(&sampler_desc);
+        let sampler = wgpu_device.create_sampler(&sampler_desc);
+        
         //let texture_usage = wgpu::TextureUsages::COPY_SRC | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::RENDER_ATTACHMENT;
         let texture_usage = wgpu::TextureUsages::TEXTURE_BINDING;
         if let Ok(capture) = self.device.get_capture(0) {
@@ -145,11 +151,13 @@ impl Kinect {
             let len = colour_image.get_size();
             let _pitch = width as usize * 4;
 
+            let slice = unsafe { std::slice::from_raw_parts(colour_image.get_buffer(), len) };
+            let colour_image_buffer: ImageBuffer<Bgra<u8>, _> = ImageBuffer::from_raw(width as u32, height as u32, slice.to_vec())
+                        .expect("can't create Image Buffer from raw pixels");
+
             if width > 0 && height > 0 {
                 //println!("format = {:?} - width = {} - height = {} - len = {} - pitch = {}", format, width, height, len, pitch);
-                let slice = unsafe { std::slice::from_raw_parts(colour_image.get_buffer(), len) };
-                let colour_image_buffer: ImageBuffer<Bgra<u8>, _> = ImageBuffer::from_raw(width as u32, height as u32, slice.to_vec())
-                        .expect("can't create Image Buffer from raw pixels");
+                
 
                 self.colour_texture = Some(wgpu::Texture::load_from_image_buffer(
                     wgpu_device, 
@@ -160,7 +168,7 @@ impl Kinect {
                 //println!("colour format {:#?}", &self.colour_texture.as_ref().unwrap().descriptor());
             }
 
-            let depth_image = capture.get_depth_image();
+            let depth_image = capture.get_color_image();
             let width = depth_image.get_width_pixels();
             let height = depth_image.get_height_pixels();
 
@@ -177,11 +185,12 @@ impl Kinect {
                 }
                 let depth_image_buffer: ImageBuffer<Luma<u16>, _> = ImageBuffer::from_raw(width as u32, height as u32, v)
                     .expect("can't create Image Buffer from raw pixels");
+
                 let depth_texture = wgpu::Texture::load_from_image_buffer(
                     wgpu_device, 
                     queue,
                     texture_usage,
-                    &depth_image_buffer);  
+                    &colour_image_buffer);  
 
                 //println!("depth format {:#?}", &depth_texture.descriptor());
                     
@@ -190,14 +199,15 @@ impl Kinect {
                 self.depth_bind_group = Some(create_bind_group(
                     wgpu_device, 
                     &self.pipeline.bind_group_layout, 
-                    &depth_texture_view, 
+                    &depth_texture_view,
+                    &sampler,
                     uniforms));
 
                 //println!("depth_bind_group {:#?}", &self.depth_bind_group.as_ref().unwrap());
             } 
 
 
-            let ir_image = capture.get_ir_image();
+            let ir_image = capture.get_color_image();
             let width = ir_image.get_width_pixels();
             let height = ir_image.get_height_pixels();
 
@@ -214,7 +224,7 @@ impl Kinect {
                     wgpu_device, 
                     queue,
                     texture_usage,
-                    &ir_image_buffer);      
+                    &colour_image_buffer);      
                     
                 let uniforms = create_uniforms(self.depth_dimension, self.depth_range, false);    
                 let ir_texture_view = ir_texture.view().build();
@@ -222,6 +232,7 @@ impl Kinect {
                     wgpu_device, 
                     &self.pipeline.bind_group_layout, 
                     &ir_texture_view, 
+                    &sampler,
                     uniforms));
 
                 //println!("ir_bind_group {:#?}", &self.ir_bind_group.as_ref().unwrap());
@@ -303,6 +314,7 @@ fn create_bind_group_layout(
             wgpu::TextureViewDimension::D2,
             texture_sample_type,
         )
+        .sampler(wgpu::ShaderStages::FRAGMENT, true)
         .uniform_buffer(wgpu::ShaderStages::FRAGMENT, uniform_dynamic)
         .build(device)
 }
@@ -311,6 +323,7 @@ fn create_bind_group(
     device: &wgpu::Device,
     layout: &wgpu::BindGroupLayout,
     texture: &wgpu::TextureView,
+    sampler: &wgpu::Sampler,
     uniforms: Uniforms,
 ) -> wgpu::BindGroup {
     let usage = wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST;
@@ -322,6 +335,7 @@ fn create_bind_group(
 
     wgpu::BindGroupBuilder::new()
         .texture_view(texture)
+        .sampler(sampler)
         .buffer::<Uniforms>(&uniform_buffer, 0..1)
         .build(device, layout)
 }

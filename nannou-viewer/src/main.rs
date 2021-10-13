@@ -9,7 +9,7 @@ use kinect::Kinect;
 fn main() {
     nannou::app(model)
         .update(update)
-        .backends(wgpu::Backends::DX12)
+        // .backends(wgpu::Backends::DX12)
         .run();
 }
 
