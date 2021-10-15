@@ -8,6 +8,7 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
         .clang_arg(r#"-IC:\Program Files\Azure Kinect SDK v1.4.1\sdk\include"#)
+        .clang_arg(r#"-IC:\Program Files\Azure Kinect Body Tracking SDK\sdk\include"#)
         .clang_arg("-v")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .whitelist_function("k4a.*")

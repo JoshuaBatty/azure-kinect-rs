@@ -76,7 +76,7 @@ impl Kinect {
             render_pipeline,
         };
 
-        Ok(Self{
+        Ok( Kinect {
             device,
             colour_texture: None,
             depth_dimension,
@@ -130,6 +130,7 @@ impl Kinect {
             let vertex_range = 0..VERTICES.len() as u32;
             let instance_range = 0..1;
             render_pass.draw(vertex_range, instance_range);
+            
             draw.texture(&texture_view).x_y(x,y).w_h(w,h);
         } 
     }

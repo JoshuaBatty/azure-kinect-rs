@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "azure-kinect",
+    "azure-body-tracking",
     "k4arecorder",
     "nannou-viewer"
 ]
