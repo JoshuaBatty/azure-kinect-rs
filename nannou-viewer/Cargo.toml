@@ -7,7 +7,8 @@ resolver = "2"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-nannou = { git = "https://github.com/mitchmindtree/nannou", branch = "wgpu-0.10"}
+nannou = { git = "https://github.com/mitchmindtree/nannou", branch = "wgpu-0.11"}
+# nannou = { git = "https://github.com/joshuabatty/nannou", branch = "camera"}
 # nannou = "0.17.1"
 azure-kinect = { path = "../azure-kinect" }
 byteorder = "1.4.3"

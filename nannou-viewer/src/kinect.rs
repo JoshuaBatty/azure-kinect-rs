@@ -68,7 +68,7 @@ impl Kinect {
             &pipeline_layout,
             &vs_mod,
             &fs_mod,
-            Frame::TEXTURE_FORMAT,
+            nannou::frame::Frame::TEXTURE_FORMAT,
             1,
         );
         let pipeline = Pipeline {
@@ -95,21 +95,21 @@ impl Kinect {
         }
     }
 
-    pub fn draw_depth_image(&self, draw: &Draw, frame: &Frame, wgpu_device: &wgpu::Device, x: f32, y: f32, w: f32, h: f32) {
+    pub fn draw_depth_image(&self, draw: &Draw, frame: &nannou::frame::Frame, wgpu_device: &wgpu::Device, x: f32, y: f32, w: f32, h: f32) {
         self.draw_renderpass(&draw, &frame, &wgpu_device, &self.depth_bind_group, x, y, w, h);
     }
 
-    pub fn draw_ir_image(&self, draw: &Draw, frame: &Frame, wgpu_device: &wgpu::Device, x: f32, y: f32, w: f32, h: f32) {
+    pub fn draw_ir_image(&self, draw: &Draw, frame: &nannou::frame::Frame, wgpu_device: &wgpu::Device, x: f32, y: f32, w: f32, h: f32) {
         self.draw_renderpass(&draw, &frame, &wgpu_device, &self.ir_bind_group, x, y, w, h);
     }
 
-    fn draw_renderpass(&self, draw: &Draw, frame: &Frame, wgpu_device: &wgpu::Device, bind_group: &Option<wgpu::BindGroup>, x: f32, y: f32, w: f32, h: f32) {
+    fn draw_renderpass(&self, draw: &Draw, frame: &nannou::frame::Frame, wgpu_device: &wgpu::Device, bind_group: &Option<wgpu::BindGroup>, x: f32, y: f32, w: f32, h: f32) {
         let usage = wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING;
         if let Some(bind_group) = bind_group {
             let dim = self.depth_dimension;
             let texture = wgpu::TextureBuilder::new()
                 .dimension(wgpu::TextureDimension::D2)
-                .format(Frame::TEXTURE_FORMAT)
+                .format(nannou::frame::Frame::TEXTURE_FORMAT)
                 .extent(wgpu::Extent3d {
                     width: dim.x as u32,
                     height: dim.y as u32,

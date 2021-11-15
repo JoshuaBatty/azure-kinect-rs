@@ -32,7 +32,7 @@ fn model(app: &App) -> Model {
     let window = app.window(w_id).unwrap();
     let device = window.device();
     
-    let azure_api = Api::new().expect("Can't load kinect azure library");
+    let azure_api = Api::new().expect("Can't load kinect azure library, make sure k4a.dll & depthengine_2_0.dll are next to the projects executable");
     let kinect = Kinect::new(azure_api.clone(), 0, &device).expect("Can't open kinect azure device");
 
     Model {
