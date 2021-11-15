@@ -2,20 +2,23 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
+pub mod api;
 pub mod calibration;
 pub mod capture;
 pub mod default;
 pub mod device;
 pub mod display;
 pub mod error;
-pub mod api;
 pub mod format;
+pub mod frame;
 pub mod image;
 pub mod k4a_functions;
+pub mod k4abt_functions;
 pub mod playback;
 pub mod playback_data_block;
 pub mod playback_track;
 pub mod record;
+pub mod tracker;
 pub mod transformation;
 pub mod utility;
 
@@ -23,13 +26,15 @@ pub mod bindings {
     include!("bindings.rs");
 }
 
+pub use api::{Api, ApiRecord, ApiTracker, DebugMessageHandler};
 pub use calibration::Calibration;
 pub use capture::Capture;
 pub use device::Device;
 pub use error::Error;
-pub use api::{DebugMessageHandler, Api, ApiRecord};
 pub use format::{Dimension, Range};
+pub use frame::Frame;
 pub use image::Image;
+pub use tracker::Tracker;
 pub use transformation::Transformation;
 
 pub use bindings::{
@@ -42,7 +47,9 @@ pub use bindings::{
     k4a_playback_seek_origin_t, k4a_playback_t, k4a_record_configuration_t,
     k4a_record_subtitle_settings_t, k4a_record_t, k4a_record_video_settings_t, k4a_result_t,
     k4a_stream_result_t, k4a_transformation_interpolation_type_t, k4a_transformation_t,
-    k4a_wait_result_t, k4a_wired_sync_mode_t, size_t, K4A_DEVICE_DEFAULT,
+    k4a_wait_result_t, k4a_wired_sync_mode_t, k4abt_body_t, k4abt_frame_t, k4abt_joint_id_t,
+    k4abt_sensor_orientation_t, k4abt_skeleton_t, k4abt_tracker_configuration_t,
+    k4abt_tracker_processing_mode_t, k4abt_tracker_t, size_t, K4A_DEVICE_DEFAULT,
     K4A_VERSION_BUILD_METADATA, K4A_VERSION_MAJOR, K4A_VERSION_MINOR, K4A_VERSION_PATCH,
     K4A_VERSION_PRERELEASE, K4A_VERSION_STR, K4A_WAIT_INFINITE,
 };

@@ -2,18 +2,30 @@ use super::*;
 use crate::Capture;
 use std::ffi::CString;
 use std::ptr;
+use std::sync::Arc;
 
-pub struct Record<'a> {
-    pub(crate) api_record: &'a ApiRecord,
+pub struct Record {
+    pub(crate) api_record: Arc<ApiRecord>,
     pub(crate) handle: k4a_record_t,
 }
 
-impl Record<'_> {
-    pub(crate) fn from_handle(api_record: &ApiRecord, handle: k4a_record_t) -> Record {
-        Record {
-            api_record: api_record,
-            handle: handle,
-        }
+impl Record {
+    /// Opens a new recording file for writing
+    pub fn new(
+        api_record: Arc<ApiRecord>,
+        path: &str,
+        device: &Device,
+        device_configuration: &k4a_device_configuration_t,
+    ) -> Result<Record, Error> {
+        let mut handle: k4a_record_t = ptr::null_mut();
+        let path = CString::new(path).unwrap_or_default();
+        Error::from((api_record.k4a_record_create)(
+            path.as_ptr(),
+            device.handle,
+            *device_configuration,
+            &mut handle,
+        ))
+        .to_result_fn(|| Self { api_record, handle })
     }
 
     /// Flushes all pending recording data to disk
@@ -133,7 +145,7 @@ impl Record<'_> {
     }
 }
 
-impl Drop for Record<'_> {
+impl Drop for Record {
     fn drop(&mut self) {
         (self.api_record.k4a_record_close)(self.handle);
         self.handle = ptr::null_mut();

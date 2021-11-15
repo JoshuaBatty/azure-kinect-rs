@@ -13,15 +13,20 @@ pub struct Playback {
 
 impl Playback {
     /// Opens a K4A recording for playback.
-    pub fn playback_open(api: Arc<Api>, api_record: Arc<ApiRecord>, path: &str) -> Result<Playback, Error> {
+    pub fn playback_open(
+        api: Arc<Api>,
+        api_record: Arc<ApiRecord>,
+        path: &str,
+    ) -> Result<Playback, Error> {
         let mut handle: k4a_playback_t = ptr::null_mut();
         let path = std::ffi::CString::new(path).unwrap_or_default();
-        Error::from((api_record.k4a_playback_open)(path.as_ptr(), &mut handle))
-            .to_result_fn(|| Self{
+        Error::from((api_record.k4a_playback_open)(path.as_ptr(), &mut handle)).to_result_fn(|| {
+            Self {
                 api,
                 api_record,
-                handle
-            })
+                handle,
+            }
+        })
     }
 
     /// Get the raw calibration blob for the K4A device that made the recording.

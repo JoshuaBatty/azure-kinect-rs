@@ -1,0 +1,15 @@
+[package]
+name = "nannou-skeleton"
+version = "0.1.0"
+edition = "2018"
+resolver = "2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# nannou = { git = "https://github.com/joshuabatty/nannou", branch = "new_camera"}
+nannou = { git = "https://github.com/mitchmindtree/nannou", branch = "wgpu-0.11"}
+
+# nannou_conrod = { git = "https://github.com/nannou-org/nannou/tree/master/nannou_conrod", branch = "camera"}
+azure-kinect = { path = "../azure-kinect" }
+env_logger = "0.9.0"

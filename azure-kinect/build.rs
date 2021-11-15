@@ -1,18 +1,16 @@
-extern crate bindgen;
-
 use std::env;
-use std::env::consts;
 use std::path::PathBuf;
 
 fn main() {
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
         .clang_arg(r#"-IC:\Program Files\Azure Kinect SDK v1.4.1\sdk\include"#)
+        .clang_arg(r#"-IC:\Program Files\Azure Kinect Body Tracking SDK\sdk\include"#)
         .clang_arg("-v")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
-        .whitelist_function("k4a.*")
-        .whitelist_type("_?[kK]4[aA].*")
-        .whitelist_var("[kK]4[aA].*")
+        .allowlist_function("k4a.*")
+        .allowlist_type("_?[kK]4[aA].*")
+        .allowlist_var("[kK]4[aA].*")
         .rustified_enum("[kK]4[aA].*")
         .generate()
         .expect("Unable to generate bindings");

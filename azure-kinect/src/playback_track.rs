@@ -64,7 +64,10 @@ impl PlaybackTrack<'_> {
     /// Gets the codec context for a particular track.
     pub fn get_codec_context(&self) -> Result<Vec<u8>, Error> {
         get_k4a_binary_data(&|codec_context, codec_context_size| {
-            (self.playback.api_record.k4a_playback_track_get_codec_context)(
+            (self
+                .playback
+                .api_record
+                .k4a_playback_track_get_codec_context)(
                 self.playback.handle,
                 self.name.as_ptr(),
                 codec_context,

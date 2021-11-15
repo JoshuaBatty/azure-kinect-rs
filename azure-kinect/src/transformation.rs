@@ -44,9 +44,7 @@ impl Transformation {
         depth_image: &Image,
         transformed_depth_image: &mut Image,
     ) -> Result<(), Error> {
-        Error::from((self
-            .api
-            .k4a_transformation_depth_image_to_color_camera)(
+        Error::from((self.api.k4a_transformation_depth_image_to_color_camera)(
             self.handle,
             depth_image.handle,
             transformed_depth_image.handle,
@@ -135,9 +133,7 @@ impl Transformation {
         color_image: &Image,
         transformed_color_image: &mut Image,
     ) -> Result<(), Error> {
-        Error::from((self
-            .api
-            .k4a_transformation_color_image_to_depth_camera)(
+        Error::from((self.api.k4a_transformation_color_image_to_depth_camera)(
             self.handle,
             depth_image.handle,
             color_image.handle,
@@ -173,14 +169,12 @@ impl Transformation {
         camera: k4a_calibration_type_t,
         xyz_image: &mut Image,
     ) -> Result<(), Error> {
-        Error::from(
-            (self.api.k4a_transformation_depth_image_to_point_cloud)(
-                self.handle,
-                depth_image.handle,
-                camera,
-                xyz_image.handle,
-            ),
-        )
+        Error::from((self.api.k4a_transformation_depth_image_to_point_cloud)(
+            self.handle,
+            depth_image.handle,
+            camera,
+            xyz_image.handle,
+        ))
         .to_result(())
     }
 

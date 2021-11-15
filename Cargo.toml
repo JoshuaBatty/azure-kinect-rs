@@ -1,10 +1,11 @@
 [workspace]
 members = [
     "azure-kinect",
-    "azure-body-tracking",
     "k4arecorder",
-    "nannou-viewer"
+    "nannou-viewer",
+    "nannou-skeleton",
 ]
 
 # Required for wgpu v0.10 feature resolution.
 resolver = "2"
+

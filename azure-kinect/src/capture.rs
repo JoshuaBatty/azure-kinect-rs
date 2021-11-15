@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 pub struct Capture {
     api: Arc<Api>,
-    pub(crate) handle: k4a_capture_t,
+    pub handle: k4a_capture_t,
 }
 
 impl Capture {
