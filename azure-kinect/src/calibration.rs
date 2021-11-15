@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 pub struct Calibration {
     api: Arc<Api>,
-    pub(crate) calibration: k4a_calibration_t,
+    pub calibration: k4a_calibration_t,
 }
 
 impl Calibration {

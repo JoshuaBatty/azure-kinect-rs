@@ -22,6 +22,17 @@ impl Default for k4a_device_configuration_t {
     }
 }
 
+impl Default for k4abt_tracker_configuration_t {
+    fn default() -> Self {
+        k4abt_tracker_configuration_t {
+            sensor_orientation: k4abt_sensor_orientation_t::K4ABT_SENSOR_ORIENTATION_DEFAULT,
+            processing_mode: k4abt_tracker_processing_mode_t::K4ABT_TRACKER_PROCESSING_MODE_GPU,
+            gpu_device_id: 0,
+            model_path: std::ptr::null(),
+        }
+    }
+}
+
 impl Default for k4a_float2_t {
     fn default() -> Self {
         unsafe { std::mem::zeroed() }
@@ -83,6 +94,18 @@ impl Default for k4a_record_video_settings_t {
 }
 
 impl Default for k4a_record_subtitle_settings_t {
+    fn default() -> Self {
+        unsafe { std::mem::zeroed() }
+    }
+}
+
+impl Default for k4abt_body_t {
+    fn default() -> Self {
+        unsafe { std::mem::zeroed() }
+    }
+}
+
+impl Default for k4abt_skeleton_t {
     fn default() -> Self {
         unsafe { std::mem::zeroed() }
     }

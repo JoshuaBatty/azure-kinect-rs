@@ -4,7 +4,6 @@ use std::ptr;
 use std::sync::Arc;
 
 pub struct Device {
-//    pub(crate) api: &'a Api,
     pub(crate) api: Arc<Api>,
     pub(crate) handle: k4a_device_t,
 }
@@ -23,25 +22,16 @@ impl Device {
     /// Open a k4a device.
     pub fn new(api: Arc<Api>, index: u32) -> Result<Device, Error> {
         let mut handle: k4a_device_t = ptr::null_mut();
-        Error::from((api.k4a_device_open)(index, &mut handle))
-            .to_result_fn(|| {
-                Self {
-                    api: api, 
-                    handle
-                }
-            })
+        Error::from((api.k4a_device_open)(index, &mut handle)).to_result_fn(|| Self { api, handle })
     }
 
     /// Starts the K4A device's cameras
-    pub fn start_cameras(
-        &self,
-        configuration: &k4a_device_configuration_t,
-    ) -> Result<(), Error> {
+    pub fn start_cameras(&self, configuration: &k4a_device_configuration_t) -> Result<(), Error> {
         Error::from((self.api.k4a_device_start_cameras)(
             self.handle,
             configuration,
         ))
-        .to_result(())        
+        .to_result(())
     }
 
     /// Reads a sensor capture into cap.  Returns true if a capture was read, false if the read timed out.
@@ -166,18 +156,12 @@ impl Device {
     /// Get the version numbers of the K4A subsystems' firmware
     pub fn get_version(&self) -> Result<k4a_hardware_version_t, Error> {
         let mut version = k4a_hardware_version_t::default();
-        Error::from((self.api.k4a_device_get_version)(
-            self.handle,
-            &mut version,
-        ))
-        .to_result(version)
+        Error::from((self.api.k4a_device_get_version)(self.handle, &mut version)).to_result(version)
     }
 
     /// Starts the K4A IMU
     pub fn start_imu(&self) -> Result<(), Error> {
-        Error::from((self.api.k4a_device_start_imu)
-            (self.handle))
-            .to_result(())
+        Error::from((self.api.k4a_device_start_imu)(self.handle)).to_result(())
     }
 
     /// Reads an IMU sample.  Returns true if a sample was read, false if the read timed out.

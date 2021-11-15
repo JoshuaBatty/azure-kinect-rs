@@ -2,7 +2,7 @@ use azure_kinect::*;
 
 pub fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let api = Api::new()?;
-    let device = Device::new(api.clone(),0)?;
+    let device = Device::new(api.clone(), 0)?;
     let camera_config = k4a_device_configuration_t::default();
     device.start_cameras(&camera_config)?;
 

@@ -1,7 +1,7 @@
 use super::error::ToResult;
 use super::k4a_functions::*;
+use super::k4abt_functions::*;
 use super::*;
-use crate::record::Record;
 use std::ffi::{c_void, CString};
 use std::os::raw;
 use std::ptr;
@@ -100,6 +100,7 @@ pub struct Api {
 
 const K4A_LIBNAME: &'static str = "k4a.dll";
 const K4ARECORD_LIBNAME: &'static str = "k4arecord.dll";
+const K4ABT_LIBNAME: &'static str = "k4abt.dll";
 
 fn load_library(lib_dir: &str, dll_file_name: &str) -> Result<*const c_void, Error> {
     let full_path =
@@ -345,6 +346,10 @@ impl Drop for Api {
     }
 }
 
+//--------------------------------------------------//
+//--------------- K4A RECORD API -------------------//
+//--------------------------------------------------//
+
 pub struct ApiRecord {
     handle: *const c_void,
     pub(crate) k4a_playback_open: k4a_playback_open,
@@ -499,15 +504,15 @@ impl ApiRecord {
         }
     }
 
-    pub fn new() -> Result<ApiRecord, Error> {
-        Ok(Self::with_library_directory(
+    pub fn new() -> Result<Arc<ApiRecord>, Error> {
+        Ok(Arc::new(Self::with_library_directory(
             std::env::current_exe()
                 .map_err(|_| Error::Failed)?
                 .parent()
                 .ok_or(Error::Failed)?
                 .to_str()
                 .ok_or(Error::Failed)?,
-        )?)
+        )?))
     }
 
     pub fn with_library_directory(lib_dir: &str) -> Result<ApiRecord, Error> {
@@ -520,27 +525,97 @@ impl ApiRecord {
         }
         r
     }
-
-    /// Opens a new recording file for writing
-    pub fn record_create(
-        &self,
-        path: &str,
-        device: &Device,
-        device_configuration: &k4a_device_configuration_t,
-    ) -> Result<Record, Error> {
-        let mut handle: k4a_record_t = ptr::null_mut();
-        let path = CString::new(path).unwrap_or_default();
-        Error::from((self.k4a_record_create)(
-            path.as_ptr(),
-            device.handle,
-            *device_configuration,
-            &mut handle,
-        ))
-        .to_result_fn(|| Record::from_handle(self, handle))
-    }
 }
 
 impl Drop for ApiRecord {
+    fn drop(&mut self) {
+        if self.handle != ptr::null() {
+            unsafe {
+                FreeLibrary(self.handle);
+                self.handle = ptr::null();
+            }
+        }
+    }
+}
+
+//--------------------------------------------------//
+//------------ K4A BODY TRACKING API ---------------//
+//--------------------------------------------------//
+
+pub struct ApiTracker {
+    handle: *const c_void,
+    pub(crate) k4abt_tracker_create: k4abt_tracker_create,
+    pub(crate) k4abt_tracker_destroy: k4abt_tracker_destroy,
+    pub(crate) k4abt_tracker_set_temporal_smoothing: k4abt_tracker_set_temporal_smoothing,
+    pub(crate) k4abt_tracker_enqueue_capture: k4abt_tracker_enqueue_capture,
+    pub(crate) k4abt_tracker_pop_result: k4abt_tracker_pop_result,
+    pub(crate) k4abt_tracker_shutdown: k4abt_tracker_shutdown,
+    pub(crate) k4abt_frame_release: k4abt_frame_release,
+    pub(crate) k4abt_frame_reference: k4abt_frame_reference,
+    pub(crate) k4abt_frame_get_num_bodies: k4abt_frame_get_num_bodies,
+    pub(crate) k4abt_frame_get_body_skeleton: k4abt_frame_get_body_skeleton,
+    pub(crate) k4abt_frame_get_body_id: k4abt_frame_get_body_id,
+    pub(crate) k4abt_frame_get_device_timestamp_usec: k4abt_frame_get_device_timestamp_usec,
+    pub(crate) k4abt_frame_get_body_index_map: k4abt_frame_get_body_index_map,
+    pub(crate) k4abt_frame_get_capture: k4abt_frame_get_capture,
+}
+
+impl ApiTracker {
+    fn with_handle(handle: *const c_void) -> Result<ApiTracker, Error> {
+        unsafe {
+            Ok(ApiTracker {
+                handle: handle,
+                k4abt_tracker_create: proc_address!(handle, k4abt_tracker_create),
+                k4abt_tracker_destroy: proc_address!(handle, k4abt_tracker_destroy),
+                k4abt_tracker_set_temporal_smoothing: proc_address!(
+                    handle,
+                    k4abt_tracker_set_temporal_smoothing
+                ),
+                k4abt_tracker_enqueue_capture: proc_address!(handle, k4abt_tracker_enqueue_capture),
+                k4abt_tracker_pop_result: proc_address!(handle, k4abt_tracker_pop_result),
+                k4abt_tracker_shutdown: proc_address!(handle, k4abt_tracker_shutdown),
+                k4abt_frame_release: proc_address!(handle, k4abt_frame_release),
+                k4abt_frame_reference: proc_address!(handle, k4abt_frame_reference),
+                k4abt_frame_get_num_bodies: proc_address!(handle, k4abt_frame_get_num_bodies),
+                k4abt_frame_get_body_skeleton: proc_address!(handle, k4abt_frame_get_body_skeleton),
+                k4abt_frame_get_body_id: proc_address!(handle, k4abt_frame_get_body_id),
+                k4abt_frame_get_device_timestamp_usec: proc_address!(
+                    handle,
+                    k4abt_frame_get_device_timestamp_usec
+                ),
+                k4abt_frame_get_body_index_map: proc_address!(
+                    handle,
+                    k4abt_frame_get_body_index_map
+                ),
+                k4abt_frame_get_capture: proc_address!(handle, k4abt_frame_get_capture),
+            })
+        }
+    }
+
+    pub fn new() -> Result<Arc<ApiTracker>, Error> {
+        Ok(Arc::new(Self::with_library_directory(
+            std::env::current_exe()
+                .map_err(|_| Error::Failed)?
+                .parent()
+                .ok_or(Error::Failed)?
+                .to_str()
+                .ok_or(Error::Failed)?,
+        )?))
+    }
+
+    pub fn with_library_directory(lib_dir: &str) -> Result<ApiTracker, Error> {
+        let h = load_library(lib_dir, K4ABT_LIBNAME)?;
+        let r = ApiTracker::with_handle(h);
+        if let Err(_) = r {
+            unsafe {
+                FreeLibrary(h);
+            }
+        }
+        r
+    }
+}
+
+impl Drop for ApiTracker {
     fn drop(&mut self) {
         if self.handle != ptr::null() {
             unsafe {
@@ -567,9 +642,8 @@ mod tests {
 
     #[test]
     fn test() -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let manager = Api::with_library_directory(
-            std::env::current_dir()?.to_str().ok_or(Error::Failed)?,
-        );
+        let manager =
+            Api::with_library_directory(std::env::current_dir()?.to_str().ok_or(Error::Failed)?);
         assert!(manager.is_ok());
         let manager2 = manager.unwrap();
         let c = (manager2.k4a_device_get_installed_count)();
