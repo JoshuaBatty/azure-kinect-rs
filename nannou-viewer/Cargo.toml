@@ -1,0 +1,16 @@
+[package]
+name = "nannou-viewer"
+version = "0.1.0"
+edition = "2018"
+resolver = "2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+nannou = { git = "https://github.com/mitchmindtree/nannou", branch = "wgpu-0.11"}
+# nannou = { git = "https://github.com/joshuabatty/nannou", branch = "camera"}
+# nannou = "0.17.1"
+azure-kinect = { path = "../azure-kinect" }
+byteorder = "1.4.3"
+env_logger = "0.9.0"
+bytemuck = { version = "1.4", features = [ "derive" ] }

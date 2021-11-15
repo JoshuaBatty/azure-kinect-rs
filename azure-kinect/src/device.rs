@@ -20,13 +20,6 @@ pub struct ColorControlCapabilities {
 }
 
 impl Device {
-    // pub(crate) fn from_handle(api: &Api, handle: k4a_device_t) -> Device {
-    //     Device {
-    //         api: api,
-    //         handle: handle,
-    //     }
-    // }
-
     /// Open a k4a device.
     pub fn new(api: Arc<Api>, index: u32) -> Result<Device, Error> {
         let mut handle: k4a_device_t = ptr::null_mut();
@@ -43,8 +36,28 @@ impl Device {
     pub fn start_cameras(
         &self,
         configuration: &k4a_device_configuration_t,
-    ) -> Result<Camera, Error> {
-        Camera::new(&self, configuration)
+    ) -> Result<(), Error> {
+        Error::from((self.api.k4a_device_start_cameras)(
+            self.handle,
+            configuration,
+        ))
+        .to_result(())        
+    }
+
+    /// Reads a sensor capture into cap.  Returns true if a capture was read, false if the read timed out.
+    pub fn get_capture(&self, timeout_in_ms: i32) -> Result<Capture, Error> {
+        let mut handle: k4a_capture_t = ptr::null_mut();
+        Error::from((self.api.k4a_device_get_capture)(
+            self.handle,
+            &mut handle,
+            timeout_in_ms,
+        ))
+        .to_result_fn(|| Capture::from_handle(self.api.clone(), handle))
+    }
+
+    /// Reads a sensor capture into cap.  Returns true if a capture was read, false if the read timed out.
+    pub fn get_capture_wait_infinite(&self) -> Result<Capture, Error> {
+        self.get_capture(K4A_WAIT_INFINITE)
     }
 
     /// Get the K4A device serial number
@@ -158,6 +171,28 @@ impl Device {
             &mut version,
         ))
         .to_result(version)
+    }
+
+    /// Starts the K4A IMU
+    pub fn start_imu(&self) -> Result<(), Error> {
+        Error::from((self.api.k4a_device_start_imu)
+            (self.handle))
+            .to_result(())
+    }
+
+    /// Reads an IMU sample.  Returns true if a sample was read, false if the read timed out.
+    pub fn get_imu_sample(&self, timeout_in_ms: i32) -> Result<k4a_imu_sample_t, Error> {
+        let mut imu_sample = k4a_imu_sample_t::default();
+        Error::from((self.api.k4a_device_get_imu_sample)(
+            self.handle,
+            &mut imu_sample,
+            timeout_in_ms,
+        ))
+        .to_result(imu_sample)
+    }
+
+    pub fn get_imu_sample_wait_infinite(&self) -> Result<k4a_imu_sample_t, Error> {
+        self.get_imu_sample(K4A_WAIT_INFINITE)
     }
 }
 

@@ -3,7 +3,6 @@
 #![allow(non_snake_case)]
 
 pub mod calibration;
-pub mod camera;
 pub mod capture;
 pub mod default;
 pub mod device;
@@ -12,7 +11,6 @@ pub mod error;
 pub mod api;
 pub mod format;
 pub mod image;
-pub mod imu;
 pub mod k4a_functions;
 pub mod playback;
 pub mod playback_data_block;
@@ -26,14 +24,12 @@ pub mod bindings {
 }
 
 pub use calibration::Calibration;
-pub use camera::Camera;
 pub use capture::Capture;
 pub use device::Device;
 pub use error::Error;
 pub use api::{DebugMessageHandler, Api, ApiRecord};
 pub use format::{Dimension, Range};
 pub use image::Image;
-pub use imu::Imu;
 pub use transformation::Transformation;
 
 pub use bindings::{
