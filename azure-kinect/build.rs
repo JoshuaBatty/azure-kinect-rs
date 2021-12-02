@@ -2,7 +2,8 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
-    let bindings = bindgen::Builder::default()
+    if cfg!(target_os = "windows") { 
+        let bindings = bindgen::Builder::default()
         .header("wrapper.h")
         .clang_arg(r#"-IC:\Program Files\Azure Kinect SDK v1.4.1\sdk\include"#)
         .clang_arg(r#"-IC:\Program Files\Azure Kinect Body Tracking SDK\sdk\include"#)
@@ -20,4 +21,6 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
+    }
+    
 }
