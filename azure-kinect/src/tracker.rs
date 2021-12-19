@@ -77,6 +77,23 @@ impl Tracker {
     pub fn get_body_id(&self, body_frame: &Frame, index: u32) -> u32 {
         (self.api_tracker.k4abt_frame_get_body_id)(body_frame.handle, index)
     }
+
+    /// Control the temporal smoothing across frames.
+    /// 
+    /// Set between 0 for no smoothing and 1 for full smoothing. 
+    /// Less smoothing will increase the responsiveness of the detected skeletons 
+    /// but will cause more positional and orientational jitters.
+    pub fn set_temporal_smoothing(&self, smoothing_factor: f32) {
+        (self.api_tracker.k4abt_tracker_set_temporal_smoothing)(self.handle, smoothing_factor)
+    }
+
+    /// Get the body frame's device timestamp in microseconds.
+    /// 
+    /// Returns the timestamp of the body frame. If the body_frame_handle is invalid this function will return 0. 
+    /// It is also possible for 0 to be a valid timestamp originating from the beginning of a recording or the start of streaming.
+    pub fn get_device_timestamp_usec(&self, body_frame: &Frame) -> u64 {
+        (self.api_tracker.k4abt_frame_get_device_timestamp_usec)(body_frame.handle)
+    }
 }
 
 impl Drop for Tracker {
