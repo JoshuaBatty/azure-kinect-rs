@@ -34,6 +34,11 @@ impl Device {
         .to_result(())
     }
 
+    /// Stops the K4A device's cameras
+    pub fn stop_cameras(&self) {
+        (self.api.k4a_device_stop_cameras)(self.handle)
+    }
+
     /// Reads a sensor capture into cap.  Returns true if a capture was read, false if the read timed out.
     pub fn get_capture(&self, timeout_in_ms: i32) -> Result<Capture, Error> {
         let mut handle: k4a_capture_t = ptr::null_mut();
