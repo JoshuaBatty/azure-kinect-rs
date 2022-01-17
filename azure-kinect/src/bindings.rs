@@ -1042,6 +1042,14 @@ pub union k4a_calibration_intrinsic_parameters_t {
     #[doc = "< Array representation of intrinsic model parameters"]
     pub v: [f32; 15usize],
 }
+
+impl std::fmt::Debug for k4a_calibration_intrinsic_parameters_t {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?} ", unsafe{self.v})
+        
+    }
+}
+
 #[doc = " individual parameter or array representation of intrinsic model."]
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -1353,7 +1361,7 @@ fn bindgen_test_layout_k4a_calibration_intrinsic_parameters_t() {
 #[doc = " </requirements>"]
 #[doc = " \\endxmlonly"]
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct _k4a_calibration_intrinsics_t {
     #[doc = "< Type of calibration model used"]
     pub type_: k4a_calibration_model_type_t,
@@ -1440,7 +1448,7 @@ pub type k4a_calibration_intrinsics_t = _k4a_calibration_intrinsics_t;
 #[doc = " </requirements>"]
 #[doc = " \\endxmlonly"]
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct _k4a_calibration_camera_t {
     #[doc = "< Extrinsic calibration data."]
     pub extrinsics: k4a_calibration_extrinsics_t,
@@ -1546,7 +1554,7 @@ pub type k4a_calibration_camera_t = _k4a_calibration_camera_t;
 #[doc = " </requirements>"]
 #[doc = " \\endxmlonly"]
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct _k4a_calibration_t {
     #[doc = "< Depth camera calibration."]
     pub depth_camera_calibration: k4a_calibration_camera_t,
@@ -1563,6 +1571,7 @@ pub struct _k4a_calibration_t {
     #[doc = "< Color camera resolution for which calibration was obtained."]
     pub color_resolution: k4a_color_resolution_t,
 }
+
 #[test]
 fn bindgen_test_layout__k4a_calibration_t() {
     assert_eq!(

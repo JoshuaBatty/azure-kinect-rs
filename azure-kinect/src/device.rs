@@ -3,6 +3,9 @@ use super::*;
 use std::ptr;
 use std::sync::Arc;
 
+unsafe impl Send for Device {}
+unsafe impl Sync for Device {}
+
 pub struct Device {
     pub(crate) api: Arc<Api>,
     pub(crate) handle: k4a_device_t,

@@ -2,6 +2,9 @@ use super::*;
 use std::ptr;
 use std::sync::Arc;
 
+unsafe impl Send for Tracker {}
+unsafe impl Sync for Tracker {}
+
 pub struct Tracker {
     pub(crate) api_tracker: Arc<ApiTracker>,
     pub(crate) handle: k4abt_tracker_t,

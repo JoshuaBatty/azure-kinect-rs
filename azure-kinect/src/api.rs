@@ -22,6 +22,12 @@ extern "stdcall" {
 
 pub type DebugMessageHandler = Box<dyn Fn(k4a_log_level_t, &str, raw::c_int, &str)>;
 
+unsafe impl Send for Api {}
+unsafe impl Sync for Api {}
+
+unsafe impl Send for ApiTracker {}
+unsafe impl Sync for ApiTracker {}
+
 pub struct Api {
     handle: *const c_void,
     require_free_library: bool,
