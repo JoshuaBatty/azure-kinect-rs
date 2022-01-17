@@ -39,7 +39,8 @@ impl Device {
 
     /// Stops the K4A device's cameras
     pub fn stop_cameras(&self) {
-        (self.api.k4a_device_stop_cameras)(self.handle)
+        (self.api.k4a_device_stop_cameras)(self.handle);
+        (self.api.k4a_device_stop_imu)(self.handle);
     }
 
     /// Reads a sensor capture into cap.  Returns true if a capture was read, false if the read timed out.
